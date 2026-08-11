@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriMitra - AI Farmer Assistant • వాయిస్ & ఫోటో మార్గదర్శి</title>
+  <meta name="description" content="AgriMitra is an AI-powered farmer assistant web app for crop disease detection, weather guidance, multi-lingual voice advice, and farm activity timing.">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Top App Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">🌾</div>
+        <div class="brand-text">
+          <h1 data-i18n="appTitle">AgriMitra</h1>
+          <div class="tagline" data-i18n="appTagline">AI Farmer Assistant • Voice & Photo Guided</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Simple vs Expert Mode Switcher -->
+        <div class="mode-badge-group">
+          <button id="btnSimpleMode" class="btn-mode-toggle active" data-i18n="simpleMode">✨ Simple Mode</button>
+          <button id="btnExpertMode" class="btn-mode-toggle" data-i18n="expertMode">📊 Expert Mode</button>
+        </div>
+
+        <!-- Language Selector -->
+        <select id="langSelect" class="select-lang" aria-label="Select Language">
+          <option value="en">English (EN)</option>
+          <option value="te">తెలుగు (TE)</option>
+          <option value="hi">हिंदी (HI)</option>
+        </select>
+
+        <!-- Active Field Selector -->
+        <select id="fieldSelect" class="select-field" aria-label="Select Active Field">
+          <!-- Populated by JS -->
+        </select>
+
+        <!-- Voice Help Button -->
+        <button id="btnHelpRead" class="btn-icon-head" title="Help Read Page" aria-label="Help Read Page">🔊</button>
+      </div>
+    </header>
+
+    <!-- Global Audio Recommendation Bar -->
+    <div class="audio-player-bar">
+      <div class="audio-info">
+        <button id="audioPlayBtn" class="audio-btn" aria-label="Play/Pause Audio">▶️</button>
+        <div>
+          <div id="audioTextDisplay" style="font-weight: 700; font-size: 0.95rem;" data-i18n="btnListen">🔊 Listen Recommendation</div>
+          <div style="font-size: 0.75rem; opacity: 0.85;">AgriMitra Speech Synthesis • EN / TE / HI</div>
+        </div>
+      </div>
+      <div id="audioWaveAnim" class="audio-wave-anim" style="display: none;">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+      <button class="nav-link active" data-tab="doctor">
+        <span class="icon">🩺</span>
+        <span data-i18n="tabDoctor">Crop Doctor</span>
+      </button>
+      <button class="nav-link" data-tab="caniact">
+        <span class="icon">⚡</span>
+        <span data-i18n="tabCanIAct">Can I Act Now?</span>
+      </button>
+      <button class="nav-link" data-tab="today">
+        <span class="icon">📋</span>
+        <span data-i18n="tabToday">Today's Tasks</span>
+      </button>
+      <button class="nav-link" data-tab="fields">
+        <span class="icon">🌾</span>
+        <span data-i18n="tabFields">My Fields & Logs</span>
+      </button>
+      <button class="nav-link" data-tab="expert">
+        <span class="icon">👨‍🌾</span>
+        <span data-i18n="tabExpert">KVK Expert</span>
+      </button>
+    </nav>
+
+    <!-- Central Recommendation Hero Box (Always Visible / Highlighted) -->
+    <section class="recommendation-hero">
+      <div class="rec-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">🤖</span>
+          <h2 style="font-size: 1.15rem; font-weight: 800;" data-i18n="recEngineTitle">AgriMitra Central Recommendation</h2>
+        </div>
+        <span class="rec-badge-main">WHAT → ACTION → WHEN → EXPLAIN</span>
+      </div>
+
+      <div class="rec-grid-4">
+        <!-- WHAT CARD -->
+        <div class="rec-card what">
+          <div class="rec-card-tag" data-i18n="whatLabel">1. WHAT IS THE ISSUE?</div>
+          <div id="recWhat" class="rec-card-content">Analyzing photo and weather context...</div>
+        </div>
+
+        <!-- ACTION CARD -->
+        <div class="rec-card action">
+          <div class="rec-card-tag" data-i18n="actionLabel">2. RECOMMENDED ACTION</div>
+          <div id="recAction" class="rec-card-content">Calculating optimal curative treatment...</div>
+        </div>
+
+        <!-- WHEN CARD -->
+        <div class="rec-card when">
+          <div class="rec-card-tag" data-i18n="whenLabel">3. WHEN TO ACT (BEST WINDOW)</div>
+          <div id="recWhen" class="rec-card-content">Evaluating wind and rain forecast window...</div>
+        </div>
+
+        <!-- EXPLAIN CARD -->
+        <div class="rec-card explain">
+          <div class="rec-card-tag" data-i18n="explainLabel">4. WHY THIS RECOMMENDATION?</div>
+          <div id="recExplain" class="rec-card-content">Explaining decision factors clearly...</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; text-align: right;">
+        <button id="btnListenRecMain" class="btn-primary" style="background: var(--accent-gold); color: #000;">
+          🔊 Listen Audio Advice
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB PAGE 1: CROP DOCTOR (Photo AI Diagnosis) -->
+    <div id="page_doctor" class="tab-content-page">
+      <div class="dashboard-grid doctor-layout">
+        
+        <!-- Left Column: Photo Upload & AI Scanner -->
+        <div class="card-section">
+          <div class="card-header-flex">
+            <h2 class="card-title">
+              <span class="icon-badge">📷</span>
+              <span data-i18n="cropDoctorTitle">Crop Doctor - Photo & AI Diagnosis</span>
+            </h2>
+            <button id="btnCameraCapture" class="btn-secondary" data-i18n="btnCamera">📷 Camera</button>
+          </div>
+
+          <!-- Dropzone & Camera Trigger -->
+          <div id="uploadZone" class="upload-zone">
+            <input type="file" id="cropFileInput" accept="image/*" style="display: none;">
+            <div class="upload-icon">📸</div>
+            <div style="font-weight: 700; font-size: 1.05rem;" data-i18n="uploadPrompt">Tap to Take Photo or Drag & Drop Crop Image</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="uploadSub">Supports leaf, fruit, stem photos (JPG, PNG)</div>
+          </div>
+
+          <!-- Sample Photos Row -->
+          <div style="margin-top: 14px;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;" data-i18n="samplePhotosLabel">Or select a sample disease photo:</div>
+            <div class="sample-photos-row">
+              <img src="assets/samples/rice_blast.png" alt="Rice Blast" class="sample-photo-thumb selected" data-sample="rice_blast" title="Rice Leaf Blast">
+              <img src="assets/samples/chili_leaf_curl.png" alt="Chilli Leaf Curl" class="sample-photo-thumb" data-sample="chili_curl" title="Chilli Leaf Curl Virus">
+              <img src="assets/samples/healthy_paddy.png" alt="Healthy Paddy" class="sample-photo-thumb" data-sample="healthy" title="Healthy Paddy Crop">
+            </div>
+          </div>
+
+          <!-- Main Image Preview & Heatmap Canvas -->
+          <div class="preview-container" style="margin-top: 16px;">
+            <img id="mainPreviewImg" src="assets/samples/rice_blast.png" alt="Crop Scan Preview" class="preview-img">
+            <canvas id="heatmapCanvas" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas>
+            
+            <!-- Scanning Overlay Beam -->
+            <div id="scanOverlay" class="scanner-overlay">
+              <div class="scan-line"></div>
+              <div style="position: absolute; bottom: 12px; left: 12px; background: rgba(0,0,0,0.75); color: #10b981; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;" data-i18n="scanningText">Analyzing plant features & leaf symptoms...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: AI Diagnosis Metrics & Dosage -->
+        <div>
+          <div class="card-section">
+            <div class="card-header-flex">
+              <h2 class="card-title">
+                <span class="icon-badge">🧬</span>
+                <span>AI Diagnosis Result</span>
+              </h2>
+              <span id="diagSeverity" class="status-pill unsafe">High Severity</span>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <h3 id="diagTitle" style="font-size: 1.3rem; color: var(--primary-700); margin-bottom: 4px;">Rice Leaf Blast (Pyricularia oryzae)</h3>
+              <p style="font-size: 0.9rem; color: var(--text-muted);">
+                <strong data-i18n="confidenceLabel">AI Confidence Score:</strong> <span id="diagConfidence" style="color: var(--primary-600); font-weight: 800;">94%</span>
+              </p>
+            </div>
+
+            <!-- Expert Mode Chemical Dosage Calculator -->
+            <div class="expert-only expert-box">
+              <h4 data-i18n="chemicalDosageTitle">Chemical Dosage Calculator per Acre</h4>
+              <div class="dosage-calculator">
+                <div>
+                  <label data-i18n="acresLabel">Field Size (Acres):</label>
+                  <input type="number" id="inputAcres" class="input-field" value="2.5" step="0.5">
+                </div>
+                <div>
+                  <label data-i18n="waterNeeded">Water Needed:</label>
+                  <div id="resWaterLiters" style="font-weight: 800; font-size: 1.1rem; color: var(--primary-600); margin-top: 6px;">500 Liters</div>
+                </div>
+              </div>
+              <div style="margin-top: 10px;">
+                <label data-i18n="chemicalNeeded">Chemical Required:</label>
+                <div id="resChemicalGram" style="font-weight: 800; font-size: 1.1rem; color: var(--accent-gold-dark);">300.0 g/ml</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-Lingual Voice Query Bar -->
+          <div class="card-section">
+            <h3 class="card-title" style="margin-bottom: 10px;">
+              <span class="icon-badge">🎙️</span>
+              <span data-i18n="voiceTitle">Ask AgriMitra by Voice</span>
+            </h3>
+
+            <div class="voice-query-bar">
+              <button id="micBtn" class="btn-mic" title="Tap to Speak" aria-label="Tap to Speak">🎤</button>
+              <input type="text" id="voiceInputText" class="voice-input-text" data-i18n-ph="voicePlaceholder" placeholder="Tap microphone and speak in English, Telugu, or Hindi...">
+            </div>
+
+            <div style="margin-top: 12px;">
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;" data-i18n="quickVoices">Quick Questions:</div>
+              <div class="quick-chips-row">
+                <button class="chip-btn" data-i18n="q1">Should I spray pesticide today?</button>
+                <button class="chip-btn" data-i18n="q2">When to irrigate paddy field?</button>
+                <button class="chip-btn" data-i18n="q3">How to cure chilli leaf curl?</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB PAGE 2: CAN I ACT NOW? -->
+    <div id="page_caniact" class="tab-content-page" style="display: none;">
+      <div class="card-section">
+        <div class="card-header-flex">
+          <h2 class="card-title">
+            <span class="icon-badge">⚡</span>
+            <span data-i18n="canIActTitle">Can I Act Now? Field Activity Readiness</span>
+          </h2>
+          
+          <select id="regionSelect" class="select-lang">
+            <option value="gps">📡 Auto GPS Location</option>
+            <option value="guntur" selected>Guntur, AP (Chilli/Rice)</option>
+            <option value="warangal">Warangal, TS (Cotton/Paddy)</option>
+            <option value="bhatinda">Bhatinda, Punjab (Wheat)</option>
+            <option value="nashik">Nashik, MH (Grapes/Onion)</option>
+          </select>
+        </div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;" data-i18n="actSub">Calculated based on current wind, humidity, rain forecast & soil state.</p>
+
+        <!-- 4 Activity Readiness Cards -->
+        <div class="act-now-grid">
+          <!-- SPRAYING -->
+          <div id="actSpray" class="act-card status-safe">
+            <div class="act-header">
+              <div class="act-icon-title">
+                <span>🚜</span>
+                <span data-i18n="actSpraying">Pesticide Spraying</span>
+              </div>
+              <span class="status-pill safe" data-i18n="statusSafe">SAFE TO ACT</span>
+            </div>
+            <div class="act-timing-window">
+              <span data-i18n="windowLabel">Safe Window:</span>
+              <span class="act-window-val">Today 3:30 PM - 6:00 PM</span>
+            </div>
+          </div>
+
+          <!-- IRRIGATION -->
+          <div id="actIrrigate" class="act-card status-caution">
+            <div class="act-header">
+              <div class="act-icon-title">
+                <span>💧</span>
+                <span data-i18n="actIrrigation">Field Irrigation</span>
+              </div>
+              <span class="status-pill caution" data-i18n="statusCaution">USE CAUTION</span>
+            </div>
+            <div class="act-timing-window">
+              <span data-i18n="windowLabel">Safe Window:</span>
+              <span class="act-window-val">Light irrigation only if needed</span>
+            </div>
+          </div>
+
+          <!-- FERTILIZER -->
+          <div id="actFertilizer" class="act-card status-safe">
+            <div class="act-header">
+              <div class="act-icon-title">
+                <span>🌾</span>
+                <span data-i18n="actFertilizer">Fertilizer Application</span>
+              </div>
+              <span class="status-pill safe" data-i18n="statusSafe">SAFE TO ACT</span>
+            </div>
+            <div class="act-timing-window">
+              <span data-i18n="windowLabel">Safe Window:</span>
+              <span class="act-window-val">Apply Urea before 5 PM</span>
+            </div>
+          </div>
+
+          <!-- HARVESTING -->
+          <div id="actHarvest" class="act-card status-unsafe">
+            <div class="act-header">
+              <div class="act-icon-title">
+                <span>✂️</span>
+                <span data-i18n="actHarvesting">Harvesting & Drying</span>
+              </div>
+              <span class="status-pill unsafe" data-i18n="statusUnsafe">DO NOT ACT NOW</span>
+            </div>
+            <div class="act-timing-window">
+              <span data-i18n="windowLabel">Safe Window:</span>
+              <span class="act-window-val">Delay harvest due to humidity</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Weather Dashboard -->
+        <div style="margin-top: 24px;">
+          <h3 class="card-title" style="font-size: 1.05rem;" data-i18n="weatherTitle">Live Weather & Microclimate</h3>
+          <div style="font-size: 0.8rem; color: var(--primary-700); font-weight: 700; margin-top: 2px;" id="wRegionName">Guntur, Andhra Pradesh</div>
+
+          <div class="weather-metrics-grid">
+            <div class="weather-metric-box">
+              <div style="font-size: 1.2rem;">🌡️</div>
+              <div id="wTemp" class="w-val">31°C</div>
+              <div class="w-label" data-i18n="tempLabel">Temperature</div>
+            </div>
+
+            <div class="weather-metric-box">
+              <div style="font-size: 1.2rem;">💧</div>
+              <div id="wHumidity" class="w-val">78%</div>
+              <div class="w-label" data-i18n="humidityLabel">Humidity</div>
+            </div>
+
+            <div class="weather-metric-box">
+              <div style="font-size: 1.2rem;">🌧️</div>
+              <div id="wRain" class="w-val">15%</div>
+              <div class="w-label" data-i18n="rainProbLabel">Rain Probability</div>
+            </div>
+
+            <div class="weather-metric-box">
+              <div style="font-size: 1.2rem;">💨</div>
+              <div id="wWind" class="w-val">9.5 km/h SW</div>
+              <div class="w-label" data-i18n="windLabel">Wind Speed</div>
+            </div>
+
+            <div class="weather-metric-box">
+              <div style="font-size: 1.2rem;">🌱</div>
+              <div id="wSoil" class="w-val">65%</div>
+              <div class="w-label" data-i18n="soilLabel">Soil Moisture</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB PAGE 3: TODAY'S TASKS & RISK ALERTS -->
+    <div id="page_today" class="tab-content-page" style="display: none;">
+      <div class="card-section">
+        <!-- Early Risk Alert Banner -->
+        <div class="alert-banner">
+          <span style="font-size: 1.8rem;">⚡</span>
+          <div>
+            <strong data-i18n="alertTitle">Early Crop Risk Warning</strong>
+            <div style="font-size: 0.88rem; margin-top: 2px;">
+              High humidity (78%) + 31°C temperature increases Rice Blast fungal spore risk by 45% in your region. Inspect leaves today.
+            </div>
+          </div>
+        </div>
+
+        <h2 class="card-title" style="margin-bottom: 16px;">
+          <span class="icon-badge">📋</span>
+          <span data-i18n="todayTitle">What Should I Do Today?</span>
+        </h2>
+
+        <div id="todayTasksContainer">
+          <!-- Dynamically populated tasks -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB PAGE 4: MY FIELDS & TREATMENT LOGS -->
+    <div id="page_fields" class="tab-content-page" style="display: none;">
+      <div class="card-section">
+        <h2 class="card-title" style="margin-bottom: 16px;">
+          <span class="icon-badge">🌾</span>
+          <span data-i18n="myFieldsTitle">Multi-Field Management & Treatment History</span>
+        </h2>
+
+        <div id="fieldLogsContainer">
+          <!-- Dynamically rendered field summary and logs -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB PAGE 5: KVK EXPERT ESCALATION -->
+    <div id="page_expert" class="tab-content-page" style="display: none;">
+      <div class="card-section">
+        <h2 class="card-title" style="margin-bottom: 12px;">
+          <span class="icon-badge">👨‍🌾</span>
+          <span data-i18n="kvkTitle">Escalate to Agricultural Expert (KVK)</span>
+        </h2>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 18px;" data-i18n="kvkDesc">
+          Send field scan, location weather, and symptoms to local Krishi Vigyan Kendra Officer.
+        </p>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <a href="tel:18001801551" class="btn-primary" style="text-decoration: none;" data-i18n="btnCallKVK">
+            📞 Call Helpline (1800-180-1551)
+          </a>
+          <button id="btnExportReport" class="btn-secondary" data-i18n="btnExportPDF">
+            📄 Export Field Health Report (PDF/Print)
+          </button>
+        </div>
+
+        <div style="margin-top: 24px; background: var(--bg-main); padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+          <h3 style="margin-bottom: 8px;">KVK Guntur District Office</h3>
+          <p style="font-size: 0.88rem; color: var(--text-muted);">
+            📍 Lam Farm, Guntur - 522034, Andhra Pradesh<br>
+            📧 Email: kvk.guntur@angrau.ac.in | 🕒 Mon-Sat 9:00 AM - 5:00 PM
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Camera Capture Modal -->
+  <div id="cameraModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="card-header-flex" style="margin-bottom: 12px;">
+        <h3 style="font-size: 1.1rem; font-weight: 700;">📷 Take Crop Photo</h3>
+        <button id="btnCloseCameraModal" class="btn-icon-head">✕</button>
+      </div>
+      <video id="cameraVideo" autoplay playsinline style="width: 100%; border-radius: var(--radius-md); background: #000; max-height: 320px;"></video>
+      <div style="margin-top: 16px; text-align: center;">
+        <button id="btnSnapPhoto" class="btn-primary" style="width: 100%;">📸 Capture Snap & Analyze</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/i18n.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/aiEngine.js"></script>
+  <script src="js/recommendation.js"></script>
+  <script src="js/historyStore.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
